@@ -100,18 +100,14 @@ async function sendEmail(to, licenseKey, orderId) {
     const pass = process.env.EMAIL_PASS || 'YOUR_APP_PASSWORD';
 
     const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
+        service: 'gmail',
         auth: { user, pass },
         tls: {
             ciphers: 'SSLv3'
         },
         connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        logger: true,
-        debug: true
+        debug: true,
+        logger: true
     });
 
     const mailOptions = {
