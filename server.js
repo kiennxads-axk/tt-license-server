@@ -100,14 +100,13 @@ async function sendEmail(to, licenseKey, orderId) {
     const pass = process.env.EMAIL_PASS || 'YOUR_APP_PASSWORD';
 
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user, pass },
-        tls: {
-            ciphers: 'SSLv3'
-        },
-        connectionTimeout: 10000,
-        debug: true,
-        logger: true
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: process.env.EMAIL_USER || 'kiennx.ads@gmail.com',
+            pass: process.env.EMAIL_PASS // Will load from Render Env
+        }
     });
 
     const mailOptions = {
