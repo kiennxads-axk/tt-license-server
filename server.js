@@ -94,27 +94,23 @@ function generateLicense(machineId, type) {
     return `${payload}-${signature}`;
 }
 
+// --- EMAIL SENDING FUNCTION (VIA BREVO API - HTTP) ---
 async function sendEmail(to, licenseKey, orderId) {
-    // Config SMTP from Env or Default
-    const user = process.env.EMAIL_USER || 'kiennx.ads@gmail.com';
-    const pass = process.env.EMAIL_PASS || 'YOUR_APP_PASSWORD';
+    const apiKey = process.env.EMAIL_PASS; // Brevo API Key
+    const senderEmail = process.env.EMAIL_USER || 'kiennx.ads@gmail.com';
+    const senderName = "TT Open Manager";
 
-    const transporter = nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 587,
-        secure: false, // true for 465, false for other ports
-        auth: {
-            user: process.env.EMAIL_USER || 'kiennx.ads@gmail.com',
-            pass: process.env.EMAIL_PASS // Will load from Render Env
-        }
-    });
+    if (!apiKey) {
+        console.error("FATAL: Missing EMAIL_PASS (Brevo API Key)");
+        return false;
+    }
 
-    const mailOptions = {
-        from: '"TT Open Manager" <kiennx.ads@gmail.com>',
-        to: to,
+    const url = 'https://api.brevo.com/v3/smtp/email';
+    const body = {
+        sender: { name: senderName, email: senderEmail },
+        to: [{ email: to }],
         subject: `[TT Open Manager] License Key cho đơn hàng #${orderId}`,
-        text: `Cảm ơn bạn đã mua bản quyền!\n\nLicense Key của bạn là:\n${licenseKey}\n\nHướng dẫn: Copy key trên và nhập vào phần mềm để kích hoạt.`,
-        html: `
+        htmlContent: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #0284c7;">Cảm ơn bạn đã sử dụng TT Open Manager!</h2>
                 <p>Đơn hàng <b>#${orderId}</b> của bạn đã được xác nhận.</p>
@@ -137,11 +133,27 @@ async function sendEmail(to, licenseKey, orderId) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`Email sent to ${to}`);
-        return true;
+        console.log(`Sending email to ${to} via Brevo API...`);
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'api-key': apiKey,
+                'content-type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (response.ok) {
+            console.log("Email sent successfully via API!");
+            return true;
+        } else {
+            const errorData = await response.json();
+            console.error("Email API Error:", errorData);
+            return false;
+        }
     } catch (error) {
-        console.error("Email error:", error);
+        console.error("Network Error calling Brevo API:", error);
         return false;
     }
 }
