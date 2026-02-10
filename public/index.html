@@ -100,15 +100,15 @@
             <div class="bg-slate-50 p-4 rounded-lg text-left space-y-2 text-sm border border-slate-200">
                 <div class="flex justify-between">
                     <span class="text-slate-500">Ngân hàng:</span>
-                    <span class="font-semibold">MB Bank</span>
+                    <span class="font-semibold">BIDV</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-500">Số tài khoản:</span>
-                    <span class="font-semibold font-mono">0987654321</span>
+                    <span class="font-semibold font-mono">8845745012</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-500">Chủ tài khoản:</span>
-                    <span class="font-semibold">NGUYEN VAN A</span>
+                    <span class="font-semibold">NGUYEN XUAN KIEN</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-slate-500">Số tiền:</span>
@@ -177,7 +177,7 @@
                 document.getElementById('order-code').innerText = orderId;
 
                 // VietQR Link Generator
-                const qrUrl = `https://img.vietqr.io/image/MB-0987654321-compact.png?amount=${currentAmount}&addInfo=${orderId}`;
+                const qrUrl = `https://img.vietqr.io/image/BIDV-8845745012-compact.png?amount=${currentAmount}&addInfo=${orderId}`;
                 document.getElementById('qr-code').src = qrUrl;
 
             } catch (error) {
