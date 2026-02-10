@@ -101,9 +101,17 @@ async function sendEmail(to, licenseKey, orderId) {
 
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, // true for 465, false for other ports
-        auth: { user, pass }
+        port: 587,
+        secure: false,
+        auth: { user, pass },
+        tls: {
+            ciphers: 'SSLv3'
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        logger: true,
+        debug: true
     });
 
     const mailOptions = {
