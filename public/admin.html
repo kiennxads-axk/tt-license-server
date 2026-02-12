@@ -218,14 +218,14 @@
             }
 
             tbody.innerHTML = orders.map(order => {
-                const statusClass = order.status === 'approved'
+                const statusClass = order.status === 'COMPLETED'
                     ? 'bg-green-100 text-green-700'
                     : 'bg-orange-100 text-orange-700';
 
-                const statusText = order.status === 'approved' ? 'Đã Duyệt' : 'Chờ Duyệt';
-                const date = new Date(order.timestamp).toLocaleString('vi-VN');
+                const statusText = order.status === 'COMPLETED' ? 'Đã Duyệt' : 'Chờ Duyệt';
+                const date = order.createdAt ? new Date(order.createdAt).toLocaleString('vi-VN') : 'N/A';
 
-                const actions = order.status === 'pending'
+                const actions = order.status === 'PENDING'
                     ? `<button onclick="approveOrder('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-bold mr-2 transition-colors">DUYỆT</button>`
                     : `<span class="text-xs text-gray-400 mr-2 italic">Đã gửi mail</span>`;
 
