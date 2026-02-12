@@ -29,6 +29,34 @@
         </div>
     </div>
 
+    <!-- Approve Modal -->
+    <div id="approveModal"
+        class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
+            <h3 class="text-xl font-bold text-slate-800 mb-4">Duyệt Đơn Hàng ✅</h3>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-600 mb-1">Số tiền thực nhận</label>
+                <input type="number" id="approveAmount"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none">
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-slate-600 mb-1">Ghi chú (Apps, Mã GD...)</label>
+                <input type="text" id="approveNote"
+                    class="w-full px-3 py-2 border rounded-lg focus:ring-blue-500 outline-none">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeApproveModal()"
+                    class="flex-1 px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg font-medium">Hủy</button>
+                <button onclick="confirmApprove()"
+                    class="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium">Xác
+                    Nhận</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8 max-w-6xl hidden" id="mainContent">
         <header class="flex justify-between items-center mb-8">
@@ -199,11 +227,11 @@
         }
 
         function updateStats(orders) {
-            const pending = orders.filter(o => o.status === 'pending').length;
-            const approved = orders.filter(o => o.status === 'approved').length;
+            const pending = orders.filter(o => o.status === 'PENDING').length;
+            const approved = orders.filter(o => o.status === 'COMPLETED').length;
             const revenue = orders
-                .filter(o => o.status === 'approved')
-                .reduce((sum, o) => sum + (parseInt(o.amount) || 0), 0);
+                .filter(o => o.status === 'COMPLETED')
+                .reduce((sum, o) => sum + (parseInt(o.actualAmount || o.amount) || 0), 0);
 
             document.getElementById('statPending').innerText = pending;
             document.getElementById('statApproved').innerText = approved;
