@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TT Open Manager - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen">
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Admin Login 🔒</h2>
+            <input type="password" id="adminPass" placeholder="Nhập mật khẩu Admin..."
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none mb-4 transition-all">
+            <button onclick="login()"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all transform active:scale-95">
+                Đăng Nhập
+            </button>
+            <p id="loginError" class="text-red-500 text-sm mt-3 text-center hidden">Sai mật khẩu!</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8 max-w-6xl hidden" id="mainContent">
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800">Quản Lý Đơn Hàng</h1>
+                <p class="text-slate-500 mt-1">Duyệt đơn và cấp license thủ công</p>
+            </div>
+            <button onclick="logout()" class="text-slate-500 hover:text-red-600 font-medium transition-colors">
+                Đăng xuất
+            </button>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500 mb-1">Chờ Duyệt</p>
+                <p class="text-3xl font-bold text-orange-500" id="statPending">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500 mb-1">Đã Duyệt</p>
+                <p class="text-3xl font-bold text-green-600" id="statApproved">0</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <p class="text-sm font-medium text-slate-500 mb-1">Tổng Doanh Thu (Ước tính)</p>
+                <p class="text-3xl font-bold text-slate-800" id="statRevenue">0đ</p>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-slate-800">Danh Sách Đơn Hàng</h2>
+            <button onclick="loadOrders()"
+                class="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                    <path d="M16 21h5v-5" />
+                </svg>
+                Làm mới
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                            <th class="p-4 font-semibold border-b">Mã Đơn</th>
+                            <th class="p-4 font-semibold border-b">Ngày Tạo</th>
+                            <th class="p-4 font-semibold border-b">Email / Khách Hàng</th>
+                            <th class="p-4 font-semibold border-b">Loại Key</th>
+                            <th class="p-4 font-semibold border-b">Số Tiền</th>
+                            <th class="p-4 font-semibold border-b">Trạng Thái</th>
+                            <th class="p-4 font-semibold border-b text-right">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody" class="text-sm divide-y divide-slate-100">
+                        <!-- Orders will be rendered here -->
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-slate-400">Đang tải dữ liệu...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIC ---
+        let currentPassword = localStorage.getItem('adminToken') || '';
+
+        function login() {
+            const pass = document.getElementById('adminPass').value;
+            if (!pass) return;
+
+            // Simple client-side check first (Optional, server checks securely)
+            currentPassword = pass;
+            localStorage.setItem('adminToken', pass);
+            loadOrders();
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        if (currentPassword) {
+            loadOrders();
+        }
+
+        async function loadOrders() {
+            try {
+                const res = await fetch('/api/orders', {
+                    headers: { 'x-admin-pass': currentPassword }
+                });
+
+                if (res.status === 401) {
+                    toggleLogin(true);
+                    document.getElementById('loginError').classList.remove('hidden');
+                    return;
+                }
+
+                toggleLogin(false);
+                const data = await res.json();
+                renderTable(data);
+                updateStats(data);
+
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối Server!");
+            }
+        }
+
+        async function approveOrder(orderId) {
+            if (!confirm(`Bạn có chắc muốn duyệt đơn hàng #${orderId}?\nEmail sẽ được gửi ngay cho khách.`)) return;
+
+            try {
+                const res = await fetch('/api/approve', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-pass': currentPassword
+                    },
+                    body: JSON.stringify({ orderId })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Đã duyệt và gửi email thành công!');
+                    loadOrders();
+                } else {
+                    alert('❌ Lỗi: ' + data.message);
+                }
+            } catch (err) {
+                alert('Lỗi kết nối!');
+            }
+        }
+
+        async function deleteOrder(orderId) {
+            if (!confirm(`Xóa vĩnh viễn đơn #${orderId}?`)) return;
+
+            try {
+                const res = await fetch(`/api/orders/${orderId}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-pass': currentPassword }
+                });
+
+                if (res.ok) {
+                    loadOrders();
+                }
+            } catch (err) {
+                alert('Lỗi kết nối!');
+            }
+        }
+
+        // --- UI HELPERS ---
+        function toggleLogin(show) {
+            const modal = document.getElementById('loginModal');
+            const main = document.getElementById('mainContent');
+            if (show) {
+                modal.classList.remove('hidden');
+                main.classList.add('hidden');
+            } else {
+                modal.classList.add('hidden');
+                main.classList.remove('hidden');
+            }
+        }
+
+        function updateStats(orders) {
+            const pending = orders.filter(o => o.status === 'pending').length;
+            const approved = orders.filter(o => o.status === 'approved').length;
+            const revenue = orders
+                .filter(o => o.status === 'approved')
+                .reduce((sum, o) => sum + (parseInt(o.amount) || 0), 0);
+
+            document.getElementById('statPending').innerText = pending;
+            document.getElementById('statApproved').innerText = approved;
+            document.getElementById('statRevenue').innerText = revenue.toLocaleString('vi-VN') + 'đ';
+        }
+
+        function renderTable(orders) {
+            const tbody = document.getElementById('orderTableBody');
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Chưa có đơn hàng nào.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = orders.map(order => {
+                const statusClass = order.status === 'approved'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-orange-100 text-orange-700';
+
+                const statusText = order.status === 'approved' ? 'Đã Duyệt' : 'Chờ Duyệt';
+                const date = new Date(order.timestamp).toLocaleString('vi-VN');
+
+                const actions = order.status === 'pending'
+                    ? `<button onclick="approveOrder('${order.id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-bold mr-2 transition-colors">DUYỆT</button>`
+                    : `<span class="text-xs text-gray-400 mr-2 italic">Đã gửi mail</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-4 font-mono font-medium text-slate-700 border-b">${order.id}</td>
+                        <td class="p-4 text-slate-500 border-b">${date}</td>
+                        <td class="p-4 border-b">
+                            <div class="font-medium text-slate-800">${order.email}</div>
+                            <div class="text-xs text-slate-400 font-mono" title="${order.machineId}">ID: ${order.machineId.substring(0, 10)}...</div>
+                        </td>
+                        <td class="p-4 border-b">
+                            <span class="px-2 py-1 rounded text-xs font-bold bg-gray-100 text-gray-600">${getTypeName(order.type)}</span>
+                        </td>
+                        <td class="p-4 font-medium text-slate-700 border-b">${parseInt(order.amount).toLocaleString('vi-VN')}đ</td>
+                        <td class="p-4 border-b">
+                            <span class="px-2 py-1 rounded-full text-xs font-bold ${statusClass}">${statusText}</span>
+                        </td>
+                        <td class="p-4 border-b text-right whitespace-nowrap">
+                            ${actions}
+                            <button onclick="deleteOrder('${order.id}')" class="text-slate-400 hover:text-red-500 p-1 rounded transition-colors" title="Xóa">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getTypeName(type) {
+            if (type === 'M') return '1 Tháng';
+            if (type === 'Y') return '1 Năm';
+            if (type === 'P') return 'Vĩnh Viễn';
+            return type;
+        }
+    </script>
+</body>
+
+</html>
