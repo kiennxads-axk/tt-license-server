@@ -232,6 +232,75 @@ app.post('/webhook/sepay', async (req, res) => {
     }
 });
 
+// --- ADMIN API (Bảo mật đơn giản) ---
+const ADMIN_PASS = process.env.ADMIN_PASS || 'admin123'; // Mật khẩu mặc định nếu chưa set
+
+// Middleware kiểm tra mật khẩu Admin
+const checkAdmin = (req, res, next) => {
+    const pass = req.headers['x-admin-pass'];
+    if (pass === ADMIN_PASS) {
+        next();
+    } else {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+};
+
+// 1. Lấy danh sách đơn hàng
+app.get('/api/orders', checkAdmin, (req, res) => {
+    const dbFile = path.join('/tmp', 'orders.json');
+    const targetFile = fs.existsSync('/tmp') ? dbFile : DB_FILE;
+
+    if (!fs.existsSync(targetFile)) return res.json([]);
+
+    const db = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
+    // Convert object to array & sort by date desc
+    const orders = Object.keys(db).map(key => ({ id: key, ...db[key] }))
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json(orders);
+});
+
+// 2. Duyệt đơn hàng (Thủ công)
+app.post('/api/approve', checkAdmin, async (req, res) => {
+    const { orderId } = req.body;
+    const order = getOrder(orderId);
+
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    if (order.status === 'COMPLETED') return res.json({ success: false, message: "Order already completed" });
+
+    try {
+        // Generate License
+        const licenseKey = generateLicense(order.machineId, order.type);
+
+        // Update Order
+        updateOrderStatus(orderId, 'COMPLETED', { licenseKey }); // status: COMPLETED -> approved
+
+        // Send Email
+        const emailSent = await sendEmail(order.email, licenseKey, orderId);
+
+        res.json({ success: true, emailSent });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, message: "Internal Error" });
+    }
+});
+
+// 3. Xóa đơn hàng (Thủ công)
+app.delete('/api/orders/:id', checkAdmin, (req, res) => {
+    const orderId = req.params.id;
+    const dbFile = path.join('/tmp', 'orders.json');
+    const targetFile = fs.existsSync('/tmp') ? dbFile : DB_FILE;
+
+    if (fs.existsSync(targetFile)) {
+        const db = JSON.parse(fs.readFileSync(targetFile, 'utf8'));
+        if (db[orderId]) {
+            delete db[orderId];
+            fs.writeFileSync(targetFile, JSON.stringify(db, null, 2));
+            return res.json({ success: true });
+        }
+    }
+    res.status(404).json({ success: false, message: "Not found" });
+});
+
 app.listen(PORT, () => {
     console.log(`License Server running on port ${PORT}`);
 });
