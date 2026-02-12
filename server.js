@@ -261,7 +261,7 @@ app.get('/api/orders', checkAdmin, (req, res) => {
 
 // 2. Duyệt đơn hàng (Thủ công)
 app.post('/api/approve', checkAdmin, async (req, res) => {
-    const { orderId } = req.body;
+    const { orderId, actualAmount, note } = req.body; // Nhận thêm actualAmount và note
     const order = getOrder(orderId);
 
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
@@ -272,7 +272,12 @@ app.post('/api/approve', checkAdmin, async (req, res) => {
         const licenseKey = generateLicense(order.machineId, order.type);
 
         // Update Order
-        updateOrderStatus(orderId, 'COMPLETED', { licenseKey }); // status: COMPLETED -> approved
+        // Lưu actualAmount và note vào DB
+        updateOrderStatus(orderId, 'COMPLETED', {
+            licenseKey,
+            actualAmount: actualAmount || order.amount, // Nếu không nhập thì lấy số cũ
+            note: note || ''
+        });
 
         // Send Email
         const emailSent = await sendEmail(order.email, licenseKey, orderId);
